@@ -44,6 +44,12 @@ public class Factorer {
 		
 		
 	}
+	public void factorizeFermat(BigInteger N,long nrOfRuns){
+		initialize(nrOfRuns);
+		fermat2(N);
+		
+		
+	}
 	public void factorizeTrial(BigInteger N,long nrOfRuns){
 		
 		initialize(nrOfRuns);
@@ -93,13 +99,11 @@ public void factorizeTrial2(BigInteger N,long nrOfRuns){
 	}
 
 	private void pollardRho(BigInteger N,BigInteger c){
-		System.out.println(N);
+//		System.out.println(N);
 //		System.out.println("doing "+N.toString());
 		//it's a prime factor itself
 //		System.out.println(N);
-		if(N.equals(BigInteger.ONE)){
-			return;
-		}
+		
 		if(N.isProbablePrime(200)){
 			res.add(N);
 			return;
@@ -125,8 +129,8 @@ public void factorizeTrial2(BigInteger N,long nrOfRuns){
 		}
 		if(d.equals(N)){
 //			System.out.println("OMG WTF "+N);
-			pollardRho(N.divide(d),c.add(BigInteger.ONE));
-//			trialDivision(N,three);
+//			pollardRho(N.divide(d),c.add(BigInteger.ONE));
+			trialDivision2(N,three);
 //			something is wrong
 			return;
 		} else {
@@ -194,6 +198,10 @@ public void factorizeTrial2(BigInteger N,long nrOfRuns){
 		
 	}
 	
+	private BigInteger almostSqrt(BigInteger N){
+		return N.shiftRight((N.bitCount()/2)-1);
+	}
+	
 	private void trialDivision2(BigInteger N,BigInteger startFactor){
 		
 		if(N.isProbablePrime(100)){
@@ -237,6 +245,145 @@ public void factorizeTrial2(BigInteger N,long nrOfRuns){
 		
 		
 	}
+//	
+//	FermatFactor(N): // N should be odd
+//	    a ← ceil(sqrt(N))
+//	    b2 ← a*a - N
+//	    while b2 isn't a square:
+//	        a ← a + 1    // equivalently: b2 ← b2 + 2*a + 1
+//	        b2 ← a*a - N //               a ← a + 1
+//	    endwhile
+//	    return a - sqrt(b2) // or a + sqrt(b2)
+//	
+	
+//	function fermatFactor(N)
+//	for x from ceil(sqrt(N)) to N
+//	ySquared := x * x - N
+//	if isSquare(ySquared) then
+//	y := sqrt(ySquared)
+//	s := (x - y)
+//	t := (x + y)
+//	if s <> 1 and s <> N then
+//	return s, t
+//	end if
+//	end if
+//	end for
+//	end function
+	public void fermat2(BigInteger n){
+		if(n.isProbablePrime(200)){
+			System.out.println("found prime "+n);
+			res.add(n);
+			return;
+		}
+		System.out.println(sqrt(three));
+		if(n.mod(two).equals(BigInteger.ZERO)){
+			res.add(two);
+			fermat2(n.divide(two));
+			return;
+		}
+		BigInteger start=sqrt(n);
+	
+		if(!isSquare(n)){
+			start=start.add(BigInteger.ONE);
+		}
+		for(BigInteger x=start;x.compareTo(n)<0;x=x.add(BigInteger.ONE)){
+			BigInteger ySquared=x.pow(2).subtract(n);
+			if(isSquare(ySquared)){
+				BigInteger y=sqrt(ySquared);
+				BigInteger s=x.subtract(y);
+				BigInteger t=x.add(y);
+				if(!s.equals(BigInteger.ONE)&&!s.equals(n)){
+					fermat2(s);
+					fermat2(t);
+				}
+			}
+			
+		}
+	}
+	public void fermat(BigInteger n){
+		if(n.equals(BigInteger.ONE)){
+			return;
+		}
+		if(n.isProbablePrime(200)){
+			res.add(n);
+			return;
+		}
+
+		if(n.mod(two).equals(BigInteger.ZERO)){
+			res.add(two);
+			fermat(n.divide(two));
+
+			return;
+		}
+
+		BigInteger a=sqrt(n);
+		if(!isSquare(n)){
+			a=a.add(BigInteger.ONE);
+		}
+
+		BigInteger b2=a.pow(2).subtract(n);
+
+		while(!isSquare(b2)){
+		
+			a=a.add(BigInteger.ONE);
+			b2=a.pow(2).subtract(n);
+//			System.out.println(b2);
+	
+			
+//			System.out.sprintln(b2+ " a "+ a);
+		}
+		System.out.println("factor: "+a.add(sqrt(b2)));
+		System.out.println("factor: sub "+a.subtract(sqrt(b2)));
+		fermat(a.add(sqrt(b2)));
+		fermat(a.subtract((sqrt(b2))));
+//		return a.add(isqrt(b2));
+	}
+//	static uint isqrt(uint x)
+//	{
+//	    int b=15; // this is the next bit we try 
+//	    uint r=0; // r will contain the result
+//	    uint r2=0; // here we maintain r squared
+//	    while(b>=0) 
+//	    {
+//	        uint sr2=r2;
+//	        uint sr=r;
+//	                    // compute (r+(1<<b))**2, we have r**2 already.
+//	        r2+=(uint)((r<<(1+b))+(1<<(b+b)));      
+//	        r+=(uint)(1<<b);
+//	        if (r2>x) 
+//	        {
+//	            r=sr;
+//	            r2=sr2;
+//	        }
+//	        b--;
+//	    }
+//	    return r;
+//	}
+	private boolean isSquare(BigInteger a){
+		return sqrt(a).pow(2).equals(a);
+	}
+	
+	public BigInteger oldisqrt(BigInteger x){
+		int b=x.bitCount();
+		BigInteger r=BigInteger.ZERO;
+		BigInteger r2=BigInteger.ZERO;
+		 while(b>=0) 
+		    {
+		        BigInteger sr2=r2;
+		        BigInteger sr=r;
+		                    // compute (r+(1<<b))**2, we have r**2 already.
+		        r2=r2.add(r.shiftLeft(1+b).add(BigInteger.ONE.shiftLeft(b+b)));
+		        r=r.add(BigInteger.ONE.shiftLeft(b));
+		       
+		        if (r2.compareTo(x)>0) 
+		        {
+		            r=sr;
+		            r2=sr2;
+		        }
+		        b--;
+		    }
+		 return r;
+	}
 	
 	public static int[] primeSieve(int to){
 		boolean bo[]=new boolean[to+1];
@@ -271,4 +418,114 @@ public void factorizeTrial2(BigInteger N,long nrOfRuns){
 		
 		return res;
 	}
+	
+	public boolean testisqrt(BigInteger i){
+		return sqrt(i.pow(2)).equals(i);
+	}
+	
+	public static BigInteger sqrt(BigInteger n)
+	{
+	 /*   if (n.signum() >= 0)
+	    {
+	        final int bitLength = n.bitLength();
+	        BigInteger root = BigInteger.ONE.shiftLeft(bitLength / 2);
+
+	        while (!isSqrt(n, root))
+	        {
+	            root = root.add(n.divide(root)).divide(two);
+	        }
+	        return root;
+	    }
+	    else
+	    {
+	        throw new ArithmeticException("square root of negative number");
+	    }*/
+		return bigRoot(n);//isqrt(n);//SquareRoot.squareRoot(n, true);
+	}
+	
+	
+	public static BigInteger isqrt(BigInteger n){
+//		System.out.println(n);
+		if(n.compareTo(three)<=0){
+			return BigInteger.ONE;
+		}
+//		System.out.println(n);
+		BigInteger x=n;
+		BigInteger x2=n.add(BigInteger.ONE);
+		
+		while(!(x.subtract(x2).abs().compareTo(BigInteger.ONE)<1)){
+			x=x2;
+//			if(x<=x2){
+//				break;
+//			}
+			x2=x.add(n.divide(x)).divide(two);
+//			System.out.println(x+" "+x2);
+		}
+//		System.out.println(x2);
+		return x2;
+	}
+	
+	private static BigInteger bigRoot(BigInteger n) {
+		  BigInteger a = BigInteger.ONE;
+		  BigInteger b = new BigInteger(n.shiftRight(5).add(new BigInteger("8")).toString());
+		  while(b.compareTo(a) >= 0) {
+		    BigInteger mid = new BigInteger(a.add(b).shiftRight(1).toString());
+		    if(mid.multiply(mid).compareTo(n) > 0) b = mid.subtract(BigInteger.ONE);
+		    else a = mid.add(BigInteger.ONE);
+		  }
+		  return a.subtract(BigInteger.ONE);
+		}
+
+
+//	private static boolean isSqrt(BigInteger n, BigInteger root)
+//	{
+//	    final BigInteger lowerBound = root.pow(2);
+//	    final BigInteger upperBound = root.add(BigInteger.ONE).pow(2);
+//	    return lowerBound.compareTo(n) <= 0
+//	        && n.compareTo(upperBound) < 0;
+//	}
+	
+	
+	public static BigInteger binSqrt(final BigInteger n){
+		BigInteger upper=n.shiftRight(n.bitCount()-1);
+		BigInteger lower=upper.shiftRight(1);
+		BigInteger tmp=lower;
+		
+		//linear search
+//		while(true){
+//			tmp=lower.pow(2);
+//			if(tmp.compareTo(n)>0){
+//				return lower.subtract(BigInteger.ONE);
+//			}
+//			lower.add(BigInteger.ONE);
+//		}
+		
+		//binary search
+		BigInteger middle=null;
+		while(lower.compareTo(upper)<0){
+			middle=lower.add(upper.subtract(lower).divide(two));
+			tmp=middle.pow(2);
+			if(tmp.compareTo(n)==0){
+				return middle;
+			}
+			if(tmp.compareTo(n)>0){
+				upper=middle.subtract(BigInteger.ONE);
+			} else {
+				lower=middle.add(BigInteger.ONE);
+			}
+			System.out.println("woo"+n+" upper "+upper+" lower "+lower);
+		}
+		if(middle==null){
+			System.out.println("last");
+			System.out.println("woo"+n+" upper "+upper+" lower "+lower);
+		}
+		tmp=middle.pow(2);
+		if(tmp.compareTo(n)>0){
+			return middle.subtract(BigInteger.ONE);
+		} else {
+			return middle;
+		}
+		
+	}
+
 }
