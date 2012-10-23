@@ -1,5 +1,6 @@
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 
 
@@ -35,6 +36,7 @@ public class Factorer {
 	
 	public Factorer(Kattio io,long endTime){
 		initprimes=primeSieve(1000000);
+//		System.out.println("primes: "+initprimes.length);
 		this.io=io;
 		this.endTime=endTime;
 	}
@@ -104,7 +106,7 @@ public void factorizeTrial2(BigInteger N,long nrOfRuns){
 		//it's a prime factor itself
 //		System.out.println(N);
 		
-		if(N.isProbablePrime(200)){
+		if(N.isProbablePrime(100)){
 			res.add(N);
 			return;
 		}
@@ -162,10 +164,17 @@ public void factorizeTrial2(BigInteger N,long nrOfRuns){
 		return x.equals(facit);
 	}
 	
+	public boolean primeTest(){
+		for(BigInteger b:res){
+			if(!b.isProbablePrime(400)){
+				return false;
+			}
+		}
+		return true;
+	}
+	
 	
 	private void trialDivision(BigInteger N,BigInteger startFactor){
-		
-		
 		if(N.isProbablePrime(100)){
 			res.add(N);
 			return;
@@ -204,6 +213,8 @@ public void factorizeTrial2(BigInteger N,long nrOfRuns){
 	
 	private void trialDivision2(BigInteger N,BigInteger startFactor){
 		
+		
+		
 		if(N.isProbablePrime(100)){
 			res.add(N);
 			return;
@@ -213,13 +224,14 @@ public void factorizeTrial2(BigInteger N,long nrOfRuns){
 			return;
 		}
 		
-		BigInteger limit = N.shiftRight((N.bitCount()/2)-1);
+		//if it is a prime returned earlier, if not it will find it before limit
+		//BigInteger limit = N.shiftRight((N.bitCount()/2)-1);
 		if(!N.testBit(0)){
 			res.add(two);
 			trialDivision2(N.divide(two),startFactor);
 			return;
 		}
-
+		
 		for(int index=0; true; index++){
 			BigInteger i;
 			if(index>=initprimes.length){
@@ -236,7 +248,12 @@ public void factorizeTrial2(BigInteger N,long nrOfRuns){
 			}
 			if(N.mod(i).equals(BigInteger.ZERO)){
 				res.add(i);
-				trialDivision2(N.divide(i),i);
+				//trialDivision2(N.divide(i),i);
+				N=N.divide(i);
+				if(N.isProbablePrime(100)){
+					res.add(N);
+					return;
+				}
 				return;
 				
 			}
@@ -245,6 +262,132 @@ public void factorizeTrial2(BigInteger N,long nrOfRuns){
 		
 		
 	}
+	
+	
+	public void trialDivision4(BigInteger N){
+		N=trialDivision3(N, 0,this.initprimes.length-1);
+		if(N==null || N.equals(BigInteger.ONE)){
+			return;
+		}
+		
+		long timeLimit=start;
+		
+		
+		BigInteger factor=new BigInteger(new Integer(initprimes[initprimes.length-1]).toString());
+		for(;true ; factor=factor.add(two)){
+			//check time
+			if(System.currentTimeMillis()>timeLimit){
+				res=null;
+				return;
+			}
+			//try division
+			if(N.mod(factor).equals(BigInteger.ZERO)){
+				res.add(factor);
+				N=N.divide(factor);
+				if(N.isProbablePrime(100)){
+					res.add(N);
+					return;
+				}
+			}
+			
+		}
+	}
+	
+	/**
+	 * uses trial division first and then uses pollard rho.
+	 * @param N
+	 * @param nrOfRuns
+	 */
+	public void factorizeTrial3(BigInteger N,long nrOfRuns){
+		
+		initialize(nrOfRuns);
+		N=startTrialDivision3(N,2000);
+		if(N!=null){
+			if(!N.equals(BigInteger.ONE)){
+				pollardRho(N,BigInteger.ONE);
+			}
+		}
+//		if(N==null){
+//			System.out.println("timeout");
+//		} else {
+//			System.out.println("Factor left: "+N);
+//		}
+//		return N;
+		
+	}
+	
+	/**
+	 * calls trialDivision3
+	 * @param N
+	 * @param toPrimeIndex
+	 * @return
+	 */
+	public BigInteger startTrialDivision3(BigInteger N, int toPrimeIndex){
+		return trialDivision3(N, 0, toPrimeIndex);
+	}
+	
+	/**
+	 * return 1 if factored all.
+	 * returns the number that is left if didn't factor all.
+	 * returns null if out of time
+	 * @param N
+	 * @param toPrimeIndex
+	 * @return
+	 */
+	public BigInteger trialDivision3(BigInteger N, int fromPrimeIndex, int toPrimeIndex){
+		//change to this better name for the time limit
+		long timeLimit=start;
+		
+		//return if it's a prime number
+		if(N.isProbablePrime(100)){
+			res.add(N);
+			return BigInteger.ONE;
+		}
+		//check time
+		if(System.currentTimeMillis()>timeLimit){
+			res=null;
+			return null;
+		}
+		//divide by two
+		if(!N.testBit(0)){
+			res.add(two);
+			return trialDivision3(N.divide(two),0,toPrimeIndex);
+		}
+		
+		//BigInteger limit = N.shiftRight((N.bitCount()/2)-1);
+		//Unnecessary it's not a prime so will find factor before limit
+		//BigInteger limit = almostSqrt(N);
+		
+		//have already tested 2
+		if(fromPrimeIndex==0){
+			fromPrimeIndex=1;
+		}
+		
+		for(int index=fromPrimeIndex; index<=toPrimeIndex; index++){
+			//get prime factor
+			BigInteger factor=new BigInteger(new Integer(initprimes[index]).toString());//slow?
+			//check if already finished
+//			if(factor.compareTo(limit)>0){
+//				break;
+//			}
+			
+			//check time
+			if(System.currentTimeMillis()>timeLimit){
+				res=null;
+				return null;
+			}
+			//try division
+			if(N.mod(factor).equals(BigInteger.ZERO)){
+				res.add(factor);
+				return trialDivision3(N.divide(factor),index,toPrimeIndex);
+			}
+			
+		}
+		return N;
+	}
+	
+	
+	
 //	
 //	FermatFactor(N): // N should be odd
 //	    a ← ceil(sqrt(N))
@@ -300,6 +443,7 @@ public void factorizeTrial2(BigInteger N,long nrOfRuns){
 			
 		}
 	}
+	
 	public void fermat(BigInteger n){
 		if(n.equals(BigInteger.ONE)){
 			return;
@@ -527,5 +671,7 @@ public void factorizeTrial2(BigInteger N,long nrOfRuns){
 		}
 		
 	}
+	
+	
 
 }
